@@ -3,20 +3,17 @@ package ssh
 import (
 	"errors"
 	"fmt"
+	"maps"
+	"slices"
 	"strings"
 )
 
-func MakeSSHConfig() *ClientConfig {
-	ret := new(ClientConfig)
-	ret.KeyExchanges = supportedKexAlgos
-	ret.HostKeyAlgorithms = supportedHostKeyAlgos
-	ret.Ciphers = supportedCiphers
-	ret.MACs = supportedMACs
-	return ret
-}
-
 func (c *ClientConfig) SetKexAlgorithms(value string) error {
-	algs, err := validateAlgorithms(value, supportedKexAlgos)
+	var allSupportedKexAlgos []string
+	allSupportedKexAlgos = append(allSupportedKexAlgos, supportedKexAlgos...)
+	// serverForbiddenKexAlgos are supported for clients but not present in the supportedKexAlgos list
+	allSupportedKexAlgos = append(allSupportedKexAlgos, slices.Collect(maps.Keys(serverForbiddenKexAlgos))...)
+	algs, err := validateAlgorithms(value, allSupportedKexAlgos)
 	if err != nil {
 		return err
 	}

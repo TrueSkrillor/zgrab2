@@ -17,7 +17,7 @@ import (
 type SSHFlags struct {
 	zgrab2.BaseFlags  `group:"Basic Options"`
 	ClientID          string `long:"client" description:"Specify the client ID string to use." default:"SSH-2.0-Go"`
-	KexAlgorithms     string `long:"kex-algorithms" description:"A comma-separated list of kex algorithms to offer in descending precedence." default:"curve25519-sha256,curve25519-sha256@libssh.org,ecdh-sha2-nistp256,ecdh-sha2-nistp384,ecdh-sha2-nistp521,diffie-hellman-group14-sha256,diffie-hellman-group14-sha1,diffie-hellman-group1-sha1"`
+	KexAlgorithms     string `long:"kex-algorithms" description:"A comma-separated list of kex algorithms to offer in descending precedence." default:"curve25519-sha256,curve25519-sha256@libssh.org,ecdh-sha2-nistp256,ecdh-sha2-nistp384,ecdh-sha2-nistp521,diffie-hellman-group14-sha256,diffie-hellman-group14-sha1,diffie-hellman-group1-sha1,diffie-hellman-group-exchange-sha256,diffie-hellman-group-exchange-sha1"`
 	HostKeyAlgorithms string `long:"host-key-algorithms" description:"A comma-separated list of host key algorithms to offer in descending precedence." default:"ssh-ed25519,ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521,rsa-sha2-512,rsa-sha2-256,ssh-rsa,ssh-dss,ssh-ed25519-cert-v01@openssh.com,ecdsa-sha2-nistp256-cert-v01@openssh.com,ecdsa-sha2-nistp384-cert-v01@openssh.com,ecdsa-sha2-nistp521-cert-v01@openssh.com,rsa-sha2-512-cert-v01@openssh.com,rsa-sha2-256-cert-v01@openssh.com,ssh-rsa-cert-v01@openssh.com,ssh-dss-cert-v01@openssh.com"`
 	Ciphers           string `long:"ciphers" description:"A comma-separated list of cipher algorithms to offer in descending precedence." default:"chacha20-poly1305@openssh.com,aes128-gcm@openssh.com,aes256-gcm@openssh.com,aes128-ctr,aes192-ctr,aes256-ctr,aes128-cbc,arcfour256,arcfour128,arcfour,3des-cbc"`
 	MACs              string `long:"macs" description:"A comma-separated list of MAC algorithms to offer in descending precedence." default:"hmac-sha2-256-etm@openssh.com,hmac-sha2-256,hmac-sha1,hmac-sha1-96"`
@@ -93,7 +93,7 @@ func (s *SSHScanner) Scan(ctx context.Context, dialGroup *zgrab2.DialerGroup, ta
 	portStr := strconv.Itoa(int(target.Port))
 	rhost := net.JoinHostPort(target.Host(), portStr)
 
-	sshConfig := ssh.MakeSSHConfig()
+	sshConfig := new(ssh.ClientConfig)
 	sshConfig.Timeout = s.config.ConnectTimeout
 	sshConfig.ConnLog = data
 	sshConfig.ClientVersion = s.config.ClientID
