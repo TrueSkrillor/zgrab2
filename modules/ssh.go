@@ -16,16 +16,17 @@ import (
 
 type SSHFlags struct {
 	zgrab2.BaseFlags  `group:"Basic Options"`
-	ClientID          string `long:"client" description:"Specify the client ID string to use" default:"SSH-2.0-Go"`
-	KexAlgorithms     string `long:"kex-algorithms" description:"Set SSH Key Exchange Algorithms"`
-	HostKeyAlgorithms string `long:"host-key-algorithms" description:"Set SSH Host Key Algorithms"`
-	Ciphers           string `long:"ciphers" description:"A comma-separated list of which ciphers to offer."`
+	ClientID          string `long:"client" description:"Specify the client ID string to use." default:"SSH-2.0-Go"`
+	KexAlgorithms     string `long:"kex-algorithms" description:"A comma-separated list of kex algorithms to offer in descending precedence." default:"curve25519-sha256,curve25519-sha256@libssh.org,ecdh-sha2-nistp256,ecdh-sha2-nistp384,ecdh-sha2-nistp521,diffie-hellman-group14-sha256,diffie-hellman-group14-sha1,diffie-hellman-group1-sha1"`
+	HostKeyAlgorithms string `long:"host-key-algorithms" description:"A comma-separated list of host key algorithms to offer in descending precedence." default:"rsa-sha2-512-cert-v01@openssh.com,rsa-sha2-256-cert-v01@openssh.com,ssh-rsa-cert-v01@openssh.com,ssh-dss-cert-v01@openssh.com,ecdsa-sha2-nistp256-cert-v01@openssh.com,ecdsa-sha2-nistp384-cert-v01@openssh.com,ecdsa-sha2-nistp521-cert-v01@openssh.com,ssh-ed25519-cert-v01@openssh.com,ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521,rsa-sha2-512,rsa-sha2-256,ssh-rsa,ssh-dss,ssh-ed25519"`
+	Ciphers           string `long:"ciphers" description:"A comma-separated list of cipher algorithms to offer in descending precedence." default:"aes128-ctr,aes192-ctr,aes256-ctr,aes128-gcm@openssh.com,aes256-gcm@openssh.com,chacha20-poly1305@openssh.com,arcfour256,arcfour128,arcfour,aes128-cbc,3des-cbc"`
+	MACs              string `long:"macs" description:"A comma-separated list of MAC algorithms to offer in descending precedence." default:"hmac-sha2-256-etm@openssh.com,hmac-sha2-256,hmac-sha1,hmac-sha1-96"`
 	CollectExtensions bool   `long:"extensions" description:"Complete the SSH transport layer protocol to collect SSH extensions as per RFC 8308 (if any)."`
-	CollectUserAuth   bool   `long:"userauth" description:"Use the 'none' authentication request to see what userauth methods are allowed"`
+	CollectUserAuth   bool   `long:"userauth" description:"Use the 'none' authentication request to see what userauth methods are allowed."`
 	GexMinBits        uint   `long:"gex-min-bits" description:"The minimum number of bits for the DH GEX prime." default:"1024"`
 	GexMaxBits        uint   `long:"gex-max-bits" description:"The maximum number of bits for the DH GEX prime." default:"8192"`
 	GexPreferredBits  uint   `long:"gex-preferred-bits" description:"The preferred number of bits for the DH GEX prime." default:"2048"`
-	HelloOnly         bool   `long:"hello-only" description:"Limit scan to the initial hello message"`
+	HelloOnly         bool   `long:"hello-only" description:"Limit scan to the initial hello message."`
 }
 
 type SSHModule struct {
@@ -66,18 +67,8 @@ func (f *SSHFlags) Help() string {
 }
 
 func (s *SSHScanner) Init(flags zgrab2.ScanFlags) error {
-	sc := ssh.MakeSSHConfig() //dummy variable to get default for host key, kex algorithm, ciphers
 	f, _ := flags.(*SSHFlags)
 	s.config = f
-	if len(s.config.Ciphers) == 0 {
-		s.config.Ciphers = string(strings.Join(sc.Ciphers, ","))
-	}
-	if len(s.config.KexAlgorithms) == 0 {
-		s.config.KexAlgorithms = string(strings.Join(sc.KeyExchanges, ","))
-	}
-	if len(s.config.HostKeyAlgorithms) == 0 {
-		s.config.HostKeyAlgorithms = string(strings.Join(sc.HostKeyAlgorithms, ","))
-	}
 	s.dialerGroupConfig = &zgrab2.DialerGroupConfig{
 		TransportAgnosticDialerProtocol: zgrab2.TransportTCP,
 		BaseFlags:                       &f.BaseFlags,
@@ -114,6 +105,9 @@ func (s *SSHScanner) Scan(ctx context.Context, dialGroup *zgrab2.DialerGroup, ta
 		log.Fatal(err)
 	}
 	if err := sshConfig.SetCiphers(s.config.Ciphers); err != nil {
+		log.Fatal(err)
+	}
+	if err := sshConfig.SetMACs(s.config.MACs); err != nil {
 		log.Fatal(err)
 	}
 	sshConfig.Verbose = s.config.Verbose
